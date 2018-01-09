@@ -16,9 +16,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	function __webpack_require__(moduleId) {
 /******/
 /******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
+/******/ 		if(installedModules[moduleId]) {
 /******/ 			return installedModules[moduleId].exports;
-/******/
+/******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
@@ -119,12 +119,11 @@ var Selectors = exports.Selectors = {
   ARROW: '[x-arrow]',
   TOOLTIPPED_EL: '[data-tooltipped]',
   CONTROLLER: '[data-tippy-controller]'
-};
 
-/**
-* The default settings applied to each instance
-*/
-var Defaults = exports.Defaults = {
+  /**
+  * The default settings applied to each instance
+  */
+};var Defaults = exports.Defaults = {
   html: false,
   position: 'top',
   animation: 'shift',
@@ -159,13 +158,12 @@ var Defaults = exports.Defaults = {
   popperOptions: {},
   open: undefined,
   onRequestClose: function onRequestClose() {}
-};
 
-/**
-* The keys of the defaults object for reducing down into a new object
-* Used in `getIndividualSettings()`
-*/
-var DefaultsKeys = exports.DefaultsKeys = Browser.SUPPORTED && Object.keys(Defaults);
+  /**
+  * The keys of the defaults object for reducing down into a new object
+  * Used in `getIndividualSettings()`
+  */
+};var DefaultsKeys = exports.DefaultsKeys = Browser.SUPPORTED && Object.keys(Defaults);
 
 /***/ }),
 /* 1 */
@@ -909,7 +907,7 @@ exports.withTooltip = _hoc2.default;
 
 
 Object.defineProperty(exports, "__esModule", {
-  value: true
+    value: true
 });
 exports.default = bindEventListeners;
 
@@ -932,102 +930,104 @@ var _matches = __webpack_require__(8);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
-* Adds the needed event listeners
-*/
+ * Adds the needed event listeners
+ */
 function bindEventListeners() {
-  var touchHandler = function touchHandler() {
-    _globals.Browser.touch = true;
+    var touchHandler = function touchHandler() {
+        _globals.Browser.touch = true;
 
-    if (_globals.Browser.iOS()) {
-      document.body.classList.add('tippy-touch');
-    }
-
-    if (_globals.Browser.dynamicInputDetection && window.performance) {
-      document.addEventListener('mousemove', mousemoveHandler);
-    }
-  };
-
-  var mousemoveHandler = function () {
-    var time = void 0;
-
-    return function () {
-      var now = performance.now();
-
-      // Chrome 60+ is 1 mousemove per rAF, use 20ms time difference
-      if (now - time < 20) {
-        _globals.Browser.touch = false;
-        document.removeEventListener('mousemove', mousemoveHandler);
-        if (!_globals.Browser.iOS()) {
-          document.body.classList.remove('tippy-touch');
+        if (_globals.Browser.iOS()) {
+            document.body.classList.add("tippy-touch");
         }
-      }
 
-      time = now;
+        if (_globals.Browser.dynamicInputDetection && window.performance) {
+            document.addEventListener("mousemove", mousemoveHandler);
+        }
     };
-  }();
 
-  var clickHandler = function clickHandler(event) {
-    // Simulated events dispatched on the document
-    if (!(event.target instanceof Element)) {
-      return (0, _hideAllPoppers2.default)();
+    var mousemoveHandler = function () {
+        var time = void 0;
+
+        return function () {
+            var now = performance.now();
+
+            // Chrome 60+ is 1 mousemove per rAF, use 20ms time difference
+            if (now - time < 20) {
+                _globals.Browser.touch = false;
+                document.removeEventListener("mousemove", mousemoveHandler);
+                if (!_globals.Browser.iOS()) {
+                    document.body.classList.remove("tippy-touch");
+                }
+            }
+
+            time = now;
+        };
+    }();
+
+    var clickHandler = function clickHandler(event) {
+        // Simulated events dispatched on the document
+        if (!(event.target instanceof Element)) {
+            return (0, _hideAllPoppers2.default)();
+        }
+
+        var el = (0, _closest2.default)(event.target, _globals.Selectors.TOOLTIPPED_EL);
+        var popper = (0, _closest2.default)(event.target, _globals.Selectors.POPPER);
+
+        if (popper) {
+            var ref = (0, _find2.default)(_globals.Store, function (ref) {
+                return ref.popper === popper;
+            });
+            if (!ref) return;
+            var interactive = ref.settings.interactive;
+
+            if (interactive) return;
+        }
+
+        if (el) {
+            var _ref = (0, _find2.default)(_globals.Store, function (ref) {
+                return ref.el === el;
+            });
+            if (!_ref) return;
+            var _ref$settings = _ref.settings,
+                hideOnClick = _ref$settings.hideOnClick,
+                multiple = _ref$settings.multiple,
+                trigger = _ref$settings.trigger;
+
+            // Hide all poppers except the one belonging to the element that was clicked IF
+            // `multiple` is false AND they are a touch user, OR
+            // `multiple` is false AND it's triggered by a click
+
+            if (!multiple && _globals.Browser.touch || !multiple && trigger.indexOf("click") !== -1) {
+                return (0, _hideAllPoppers2.default)(_ref);
+            }
+
+            // If hideOnClick is not strictly true or triggered by a click don't hide poppers
+            if (hideOnClick !== true || trigger.indexOf("click") !== -1) return;
+        }
+
+        // Don't trigger a hide for tippy controllers, and don't needlessly run loop
+        if ((0, _closest2.default)(event.target, _globals.Selectors.CONTROLLER) || !document.querySelector(_globals.Selectors.POPPER)) return;
+
+        (0, _hideAllPoppers2.default)();
+    };
+
+    var blurHandler = function blurHandler(event) {
+        var _document = document,
+            el = _document.activeElement;
+
+        if (el && el.blur && _matches.matches.call(el, _globals.Selectors.TOOLTIPPED_EL)) {
+            el.blur();
+        }
+    };
+
+    // Hook events
+    document.addEventListener("click", clickHandler);
+    document.addEventListener("touchstart", touchHandler);
+    window.addEventListener("blur", blurHandler);
+
+    if (!_globals.Browser.SUPPORTS_TOUCH && (navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)) {
+        document.addEventListener("pointerdown", touchHandler);
     }
-
-    var el = (0, _closest2.default)(event.target, _globals.Selectors.TOOLTIPPED_EL);
-    var popper = (0, _closest2.default)(event.target, _globals.Selectors.POPPER);
-
-    if (popper) {
-      var ref = (0, _find2.default)(_globals.Store, function (ref) {
-        return ref.popper === popper;
-      });
-      var interactive = ref.settings.interactive;
-
-      if (interactive) return;
-    }
-
-    if (el) {
-      var _ref = (0, _find2.default)(_globals.Store, function (ref) {
-        return ref.el === el;
-      });
-      var _ref$settings = _ref.settings,
-          hideOnClick = _ref$settings.hideOnClick,
-          multiple = _ref$settings.multiple,
-          trigger = _ref$settings.trigger;
-
-      // Hide all poppers except the one belonging to the element that was clicked IF
-      // `multiple` is false AND they are a touch user, OR
-      // `multiple` is false AND it's triggered by a click
-
-      if (!multiple && _globals.Browser.touch || !multiple && trigger.indexOf('click') !== -1) {
-        return (0, _hideAllPoppers2.default)(_ref);
-      }
-
-      // If hideOnClick is not strictly true or triggered by a click don't hide poppers
-      if (hideOnClick !== true || trigger.indexOf('click') !== -1) return;
-    }
-
-    // Don't trigger a hide for tippy controllers, and don't needlessly run loop
-    if ((0, _closest2.default)(event.target, _globals.Selectors.CONTROLLER) || !document.querySelector(_globals.Selectors.POPPER)) return;
-
-    (0, _hideAllPoppers2.default)();
-  };
-
-  var blurHandler = function blurHandler(event) {
-    var _document = document,
-        el = _document.activeElement;
-
-    if (el && el.blur && _matches.matches.call(el, _globals.Selectors.TOOLTIPPED_EL)) {
-      el.blur();
-    }
-  };
-
-  // Hook events
-  document.addEventListener('click', clickHandler);
-  document.addEventListener('touchstart', touchHandler);
-  window.addEventListener('blur', blurHandler);
-
-  if (!_globals.Browser.SUPPORTS_TOUCH && (navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)) {
-    document.addEventListener('pointerdown', touchHandler);
-  }
 }
 
 /***/ }),
